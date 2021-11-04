@@ -1,35 +1,51 @@
 import pytest
-from fdsolver.classes import *
+from fdsolver.classes import Relation, FD, FDSet
+from fdsolver.io import FDReader
+from fdsolver.solver import Solver
 
 @pytest.fixture
-def all_objs():
+def make_solver_1():
+    fd_a_b = FD(Relation('A'), Relation('B'))
+    fd_b_c = FD(Relation('B'), Relation('C'))
+    fd_c_d = FD(Relation('C'), Relation('D'))
+    fd_d_e = FD(Relation('D'), Relation('E'))
+
+    fdset_1 = FDSet(fd_a_b, fd_b_c, fd_c_d, fd_d_e)
+    solver_1 = Solver(fdset_1)
+    return solver_1
+
+@pytest.fixture
+def make_solver_2():
+    fd_a_b = FD(Relation('A'), Relation('B'))
+    fd_bc_e = FD(Relation('BC'), Relation('E'))
+    fd_c_d = FD(Relation('C'), Relation('D'))
+
+    fdset_2 = FDSet(fd_a_b, fd_bc_e, fd_c_d)
+    solver_2 = Solver(fdset_2)
+    return solver_2
+
+@pytest.fixture
+def make_solver_3():
+    fd_a_b = FD(Relation('A'), Relation('B'))
+    fd_bc_e = FD(Relation('BC'), Relation('D'))
+
+    fdset_3 = FDSet(fd_a_b, fd_bc_e)
+    solver_3 = Solver(fdset_3)
+    return solver_3
+
+@pytest.fixture
+def fdsets():
     rel_abc = Relation('ABC')
-    rel_abc2 = Relation('ABC')
     rel_cde = Relation('CDE')
-
-    # Testing fileInput parameter
-    rel_de = Relation(None, fileInput='{D,E}')
-    rel_bc = Relation(None, fileInput='{B,C}')
-    rel_ad = Relation(None, fileInput='{A,D}')
-
-    rel_a = Relation('A')
+    rel_de = Relation('DE')
+    rel_bc = Relation('BC')
+    rel_ad = Relation('AD')
     rel_b = Relation('B')
-    rel_c = Relation('C')
-    rel_d = Relation('D')
     rel_e = Relation('E')
     
-    fd_abc_abc2 = FD(rel_abc, rel_abc2)
-    fd_abc_cde = FD(rel_abc, rel_cde)
-
     fd_abc_de = FD(rel_abc, rel_de) 
-    fd_abc_d = FD(rel_abc, rel_d)
-    fd_abc_e = FD(rel_abc, rel_e)
-    fd_abc_de2 = FD(rel_abc, rel_de)
-
     fd_cde_bc = FD(rel_cde, rel_bc)
-    
     fd_de_b = FD(rel_de, rel_b)
-    fd_de_c = FD(rel_de, rel_c)
     fd_bc_e = FD(rel_bc, rel_e)
     fd_ad_e = FD(rel_ad, rel_e)
 
@@ -50,5 +66,5 @@ def all_objs():
     fdset_3.add_step(fd_ad_e)
     fdset_3.add_step(fd_de_b)
 
-    return dict(**locals())
+    return [fdset_1, fdset_2, fdset_3]
 

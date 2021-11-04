@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from itertools import chain, combinations
 
 class Relation:
     def __init__(self, elems, name='r', fileInput=None):
@@ -27,6 +28,29 @@ class Relation:
     
     def __repr__(self):
         return self.__str__()
+
+    def copy(self):
+        return Relation(self.elems)
+    
+    def deepcopy(self):
+        newSet = {}
+        for each in self.elems:
+            newSet.add(each.copy())
+        return Relation(newSet)
+
+    def subsets(self):
+        lst = [rel for rel in self]
+        allSubsets = list(chain.from_iterable( \
+                            combinations(lst, r) for r in range(len(lst)+1)))
+        unionedSubsets = []
+        for eachSubset in allSubsets:
+            if len(eachSubset) == 0:
+                continue
+            currRel = eachSubset[0].copy()
+            for eachRel in eachSubset[1:]:
+                currRel |= eachRel
+            unionedSubsets.append(currRel)
+        return unionedSubsets
 
     class RelationIterator:
         def __init__(self, rel):
@@ -88,9 +112,9 @@ class Relation:
 class FD:
     def __init__(self, bef, aft, fileInput=None):
         if fileInput and isinstance(fileInput, str):
-            before, after = line.split(' -> ')
-            self.before = Relation(before)
-            self.after = Relation(after)
+            before, after = fileInput.split(' -> ')
+            self.before = Relation(None, fileInput=before)
+            self.after = Relation(None, fileInput=after)
         elif bef and aft:
             if not isinstance(bef, Relation) or not isinstance(aft, Relation):
                 raise TypeError('FD instancing tuple must contain Relations')
@@ -114,8 +138,17 @@ class FD:
         self.before |= new
         self.after |= new
 
+    def unaugment(self):
+        # i.e. {A,C} -> {A,D} becomes {C} -> {D}
+        intersection = self.before & self.after
+        self.before -=  intersection
+        self.after -= intersection
+
     def __str__(self):
         return str(self.before) + " -> " + str(self.after)
+
+    def __repr__(self):
+        return self.__str__()
 
     def __eq__(self, other):
         if not isinstance(other, FD):

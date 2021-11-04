@@ -1,5 +1,6 @@
+from fdsolver.classes import *
 
-class Reader:
+class FDReader:
     def __init__(self, filepath):
         self.path = filepath
 
@@ -9,13 +10,22 @@ class Reader:
             for eachLine in f.readlines():
                 eachLine = eachLine.strip()
                 if self._is_line_fd(eachLine):
-                    before, after = line.split(' -> ')
-                    output.append(FD(eachLine)) 
+                    newFd = FD(None, None, fileInput=eachLine)
+                    output.append(newFd) 
                 elif self._is_line_rel(eachLine):
+                    newRel = Relation(None, fileInput=eachLine)
+                    output.append(newRel)
+        return output
                     
-
     def read_as_fdset(self):
-
+        newFDSet = FDSet()
+        with open(self.path, 'r') as f:
+            for eachLine in f.readlines():
+                eachLine = eachLine.strip()
+                if self._is_line_fd(eachLine):
+                    newFd = FD(None, None, fileInput=eachLine)
+                    newFDSet.add_step(newFd)
+        return newFDSet
 
     def _is_line_rel(self, line):
         hasBraces = line.startswith('{') and line.endswith('}')
@@ -27,6 +37,16 @@ class Reader:
             return False
         before, after = line.split(' -> ')
         return self._is_line_rel(before) and self._is_line_rel(after)
-    
-    def _line_to_rel(self, line):
-        line = line
+
+class FDWriter:
+    def __init__(self, filepath):
+        self.path = filepath
+
+    def write_obj(self, obj):
+        if isinstance(obj, Relation) \
+                or isinstance(obj, FD) \
+                or isinstance(obj, FDSet):
+            with open(self.path, 'a+') as f:
+                print(obj, file=f)
+        else:
+            raise NotImplemented
