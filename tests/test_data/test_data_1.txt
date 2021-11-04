@@ -1,0 +1,4 @@
+{A,B,C} -> {D,E}
+this line should be ignored
+{A,D} -> {C}
+{B,C,D} -> {A,C}
