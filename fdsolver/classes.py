@@ -77,6 +77,12 @@ class Relation:
     # == and != operator
     def __eq__(self, other):
         return self.elems == other
+    
+    # < and > operator
+    def __lt__(self, other):
+        return len(self.elems) < len(other.elems)
+    def __gt__(self, other):
+        return len(self.elems) > len(other.elems)
 
     # | and |= operators (union)
     def __or__(self, other):

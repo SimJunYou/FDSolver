@@ -1,4 +1,5 @@
 from fdsolver.classes import Relation, FD, FDSet
+from random import shuffle 
 from typing import List
 
 # Solves based on the set of FDs given to it on initialisation
@@ -10,8 +11,10 @@ class Solver:
         # is 'end' a subset of 'start'+?
         return end in self.closure(start)
 
-    def closure(self, rel: Relation, no_trivial=False):
+    def closure(self, rel: Relation, no_trivial=False, limit_to: Relation=None):
         # i.e. r{A,B,C} -> [r{A}, r{B}, r{C}]
+        if len(rel) == 0:
+            return rel
         closure = rel.copy()
         stillValid = True
         while stillValid:
@@ -20,9 +23,12 @@ class Solver:
                 if fd.before in closure and not fd.after in closure:
                     stillValid = True
                     closure |= fd.after
+        final_closure = closure
         if no_trivial:
-            return closure - rel
-        return closure
+            final_closure -= rel
+        if limit_to:
+            final_closure &= limit_to
+        return final_closure
 
     def superkeys(self, rel: Relation):
         superkeys = []
@@ -66,29 +72,50 @@ class Solver:
                     return False
         return True
 
-    def find_bcnf_decomp(self, rel: Relation):
+    # most definitely not working
+    # apparently finding lossless decomp to bcnf is NP-Complete
+    def find_satisfactory_bcnf_decomp(self, rel: Relation):
+        # This is bogo-find :)
+        keys = self.keys(rel)
+        while True:
+            latest_decomp = self.find_bcnf_decomp(rel, randomize=True)
+            for eachKey in keys:
+                if eachKey in latest_decomp:
+                    pass
+            if all([eachKey not in latest_decomp]):
+                latest_decomp.append(keys[0])
+            if self.is_lossless_decomp(latest_decomp):
+                break
+        return latest_decomp
+
+    def find_bcnf_decomp(self, rel: Relation, randomize=False):
         decomp_list = []
-        for subset in rel.subsets():
+        sortedSubsetList = sorted(rel.subsets(), reverse=True)
+
+        # Shuffle the sorted subset list randomly
+        # The order of subsets affects the decomposition found
+        if randomize:
+            shuffle(sortedSubsetList)
+
+        for subset in sortedSubsetList:
             if len(subset) > 0:
-                cl = self.closure(subset) & rel
-                if subset in cl and subset != cl and cl in rel and cl != rel:
-                    decomp_list.append(self.find_bcnf_decomp(subset))
-                    decomp_list.append(self.find_bcnf_decomp(cl - subset))
+                cl = self.closure(subset, no_trivial=True, limit_to=rel) & rel
+                if len(cl) > 0:
+                    decomp_list += self.find_bcnf_decomp(subset, randomize=randomize)
+                    decomp_list += self.find_bcnf_decomp(cl - subset, randomize=randomize)
                     break
         if len(decomp_list) == 0:
-            return rel
+            return [rel]
         return decomp_list
 
-
-    def is_lossless_decomp(self, relList: List[Relation]):
+    def is_lossless_decomp(self, relList: List[Relation], originalRel: Relation):
         if len(relList) <= 1:
             return True
-        rel = relList[0].copy()
+        intersect = relList[0].copy()
         for eachRel in relList[1:]:
-            rel &= eachRel
-        closure = self.closure(rel)
-        
-        return any([(eachRel in closure) for eachRel in relList])
+            intersect &= eachRel
+        superkeys = self.superkeys(originalRel)
+        return intersect in superkeys
 
 
 

@@ -66,7 +66,16 @@ def test_solver_is_bcnf(make_solver_3):
     assert solver_3.is_bcnf(rel_ade) == True
     assert solver_3.is_bcnf(rel_ace) == True
 
+'''
 def test_solver_bcnf_decomp(make_solver_3):
     solver_3 = make_solver_3
     rel_abcde = Relation('ABCDE')
     print(solver_3.find_bcnf_decomp(rel_abcde))
+'''
+
+def test_solver_is_lossless_decomp(make_solver_3):
+    solver_3 = make_solver_3
+    rel_abcde = Relation('ABCDE')
+    assert not solver_3.is_lossless_decomp([Relation('ACE'), Relation('BD')], rel_abcde)
+    assert solver_3.is_lossless_decomp([Relation('ACED'), Relation('ACEB')], rel_abcde)
+
