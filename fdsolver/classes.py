@@ -2,6 +2,30 @@ from collections.abc import Iterable
 from itertools import chain, combinations
 
 class Relation:
+    '''
+    Abstract representation of a relation. Each attribute can be any object, but for
+    ease of use, attributes should be strings and preferably chars.
+
+    Constructors:
+    __init__()
+
+    Operators:
+    __str__, __repr__
+    __len__, __iter__, __contains__
+    __eq__, __lt__, __gt__
+    __or__, __ior__
+    __and__, __iand__
+    __sub__, __isub__
+
+    Methods:
+    copy(), deepcopy()
+    subsets()
+
+    Properties:
+    elems, name
+    
+    '''
+
     def __init__(self, elems, name='r', fileInput=None):
         if fileInput and isinstance(fileInput, str):
             firstBracket = fileInput.find('{')
@@ -116,6 +140,27 @@ class Relation:
 
 
 class FD:
+    '''
+    Abstract representation of a functional dependency.
+    Uses the Relation class defined earlier to express both sides of the FD.
+    Not much use by itself; commonly used to construct FDSets.
+
+    Constructors:
+    __init__()
+
+    Operators:
+    __str__, __repr__
+    __eq__
+    __or__, __ior__
+
+    Methods:
+    decompose()
+    augment(new), unaugment()
+
+    Properties:
+    before, after
+    '''
+
     def __init__(self, bef, aft, fileInput=None):
         if fileInput and isinstance(fileInput, str):
             before, after = fileInput.split(' -> ')
@@ -176,6 +221,29 @@ class FD:
 
 
 class FDSet:
+    '''
+    Abstract representation of a set of functional dependencies.
+    Uses the FD class defined earlier.
+    Can iterate and get/set using indexing.
+
+
+    Constructors:
+    __init__()
+
+    Operators:
+    __str__, __repr__
+    __len__
+    __getitem__, __setitem__
+    __iter__, __contains__
+    __eq__
+
+    Methods:
+    add_step()
+
+    Properties:
+    proof
+    '''
+
     def __init__(self, *args):
         self.proof = [*args]
 
@@ -189,6 +257,9 @@ class FDSet:
         for eachFd in self.proof:
             outstr += str(eachFd) + "\n"
         return outstr.strip() # remove excess \n
+
+    def __repr__(self):
+        return str(self)
 
     def __len__(self):
         return len(self.proof)
