@@ -84,6 +84,6 @@ def test_interactive_bcnf_decomp(make_solver_3):
 def test_solver_is_lossless_decomp(make_solver_3):
     solver_3 = make_solver_3
     rel_abcde = Relation('ABCDE')
-    assert not solver_3.is_lossless_decomp([Relation('ACE'), Relation('BD')], rel_abcde)
-    assert solver_3.is_lossless_decomp([Relation('ACED'), Relation('ACEB')], rel_abcde)
+    assert not solver_3.is_lossless_decomp(Relation('ACE'), Relation('BD'))
+    assert solver_3.is_lossless_decomp(Relation('ACED'), Relation('ACEB'))
 

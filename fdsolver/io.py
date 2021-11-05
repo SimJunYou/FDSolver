@@ -1,10 +1,11 @@
-from fdsolver.classes import *
+from fdsolver.classes import Relation, FD, FDSet
+from fdsolver.solver import Solver
 
 class FDReader:
     def __init__(self, filepath):
         self.path = filepath
 
-    def read_as_objs(self):
+    def get_objs(self):
         output = []
         with open(self.path, 'r') as f:
             for eachLine in f.readlines():
@@ -17,7 +18,7 @@ class FDReader:
                     output.append(newRel)
         return output
                     
-    def read_as_fdset(self):
+    def get_fdset(self):
         newFDSet = FDSet()
         with open(self.path, 'r') as f:
             for eachLine in f.readlines():
@@ -26,6 +27,9 @@ class FDReader:
                     newFd = FD(None, None, fileInput=eachLine)
                     newFDSet.add_step(newFd)
         return newFDSet
+
+    def get_solver(self):
+        return Solver(self.get_fdset())
 
     def _is_line_rel(self, line):
         hasBraces = line.startswith('{') and line.endswith('}')
@@ -50,3 +54,4 @@ class FDWriter:
                 print(obj, file=f)
         else:
             raise NotImplemented
+
