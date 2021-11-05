@@ -44,7 +44,7 @@ r{B}
 
 ## Conveniently find all subsets
 >>> print(rel_abc.subsets())
->>> [r{C}, r{B}, r{A}, r{B,C}, r{A,C}, r{A,B}, r{A,B,C}]
+[r{C}, r{B}, r{A}, r{B,C}, r{A,C}, r{A,B}, r{A,B,C}]
 ```
 
 Functional dependencies (**FD**) are implemented together with their sets (**FDSet**), built on top of the Relation class:
@@ -149,11 +149,13 @@ Current feature checklist:
 
 ## Project Structure
 ```
-.
+(root dir)
+├── CHANGELOG.md
 ├── LICENSE.txt
 ├── README.md
 ├── setup.py
 ├── fdsolver
+│   ├── __init__.py
 │   ├── classes.py
 │   ├── graph.py (WIP)
 │   ├── io.py
@@ -173,4 +175,9 @@ Current feature checklist:
 Currently, this library uses [Pytest](https://docs.pytest.org/en/6.2.x/) to perform unit testing. The tests are split into different files sorted according to what they are testing.
 
 Coverage isn't amazing, but it ensures that there are no show-stopping bugs that either lead to crashes or obviously wrong answers. At this point, I'm not sure if it can catch more subtle bugs, but I'll just have to wait and see.
+
+## Usage
+Since this project isn't launched on Pip yet, just clone it and do `pip install -e .` in the root directory.
+
+From there, you can start importing and using the library with `from fdsolver.classes import *` and so on.
 
