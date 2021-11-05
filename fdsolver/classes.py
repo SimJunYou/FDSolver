@@ -174,6 +174,7 @@ class FD:
         if self.before == other.before:
             self.after |= other.after
 
+
 class FDSet:
     def __init__(self, *args):
         self.proof = [*args]

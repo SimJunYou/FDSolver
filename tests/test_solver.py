@@ -22,9 +22,8 @@ def test_solver_closure(make_solver_1, make_solver_2):
     solver_2 = make_solver_2
 
     assert solver_2.closure(rel_a) == Relation('AB')
-    assert solver_2.closure(Relation('AC')) == Relation('ABCDE')
-    assert solver_2.closure(Relation('AC'), no_trivial=True) == Relation('BDE')
     assert solver_2.closure(rel_b) == Relation('B')
+    assert solver_2.closure(Relation('AC')) == Relation('ABCDE')
 
 
 def test_solver_superkeys(make_solver_2):
@@ -66,11 +65,20 @@ def test_solver_is_bcnf(make_solver_3):
     assert solver_3.is_bcnf(rel_ade) == True
     assert solver_3.is_bcnf(rel_ace) == True
 
-'''
-def test_solver_bcnf_decomp(make_solver_3):
+
+@pytest.mark.parametrize('execution_count', range(10))
+def test_solver_bcnf_decomp(make_solver_3, execution_count):
     solver_3 = make_solver_3
     rel_abcde = Relation('ABCDE')
-    print(solver_3.find_bcnf_decomp(rel_abcde))
+    bcnf_list = solver_3.find_bcnf_decomp(rel_abcde, randomize=True)
+    for each in bcnf_list:
+        assert solver_3.is_bcnf(each) == True
+
+'''
+def test_interactive_bcnf_decomp(make_solver_3):
+    solver_3 = make_solver_3
+    rel_abcde = Relation('ABCDE')
+    assert solver_3.interactive_find_bcnf_decomp(rel_abcde)
 '''
 
 def test_solver_is_lossless_decomp(make_solver_3):

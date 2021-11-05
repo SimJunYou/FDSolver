@@ -11,7 +11,7 @@ class Solver:
         # is 'end' a subset of 'start'+?
         return end in self.closure(start)
 
-    def closure(self, rel: Relation, no_trivial=False, limit_to: Relation=None):
+    def closure(self, rel: Relation, limit_to: Relation=None):
         # i.e. r{A,B,C} -> [r{A}, r{B}, r{C}]
         if len(rel) == 0:
             return rel
@@ -23,12 +23,7 @@ class Solver:
                 if fd.before in closure and not fd.after in closure:
                     stillValid = True
                     closure |= fd.after
-        final_closure = closure
-        if no_trivial:
-            final_closure -= rel
-        if limit_to:
-            final_closure &= limit_to
-        return final_closure
+        return closure 
 
     def superkeys(self, rel: Relation):
         superkeys = []
@@ -72,37 +67,45 @@ class Solver:
                     return False
         return True
 
-    # most definitely not working
-    # apparently finding lossless decomp to bcnf is NP-Complete
-    def find_satisfactory_bcnf_decomp(self, rel: Relation):
-        # This is bogo-find :)
-        keys = self.keys(rel)
+    def interactive_find_bcnf_decomp(self, rel: Relation):
+        currentRel = rel.copy()
         while True:
-            latest_decomp = self.find_bcnf_decomp(rel, randomize=True)
-            for eachKey in keys:
-                if eachKey in latest_decomp:
-                    pass
-            if all([eachKey not in latest_decomp]):
-                latest_decomp.append(keys[0])
-            if self.is_lossless_decomp(latest_decomp):
+            decomp_list = self._find_bcnf_decomp_helper(currentRel)
+            for count, each in enumerate(decomp_list):
+                print(f"{count}: {each[0]} - {each[1]}, {each[2]} - {each[3]}")    
+            user = input("Decomp next relation (q to stop): ")
+            print()
+            if user == 'q':
                 break
-        return latest_decomp
+            currentRel = Relation(user)
+        return True
+
+    def _find_bcnf_decomp_helper(self, rel: Relation):
+        decomp_list = []
+        sortedSubsetList = sorted(rel.subsets())
+        for subset in sortedSubsetList:
+            if len(subset) > 0:
+                cl = self.closure(subset) & rel
+                if subset in cl and subset != cl and cl in rel and cl != rel:
+                    r1 = cl
+                    r2 = subset | (rel - cl)
+                    decomp_list.append([r1, self.is_bcnf(r1), \
+                                        r2, self.is_bcnf(r2)])
+        return decomp_list
 
     def find_bcnf_decomp(self, rel: Relation, randomize=False):
         decomp_list = []
-        sortedSubsetList = sorted(rel.subsets(), reverse=True)
-
-        # Shuffle the sorted subset list randomly
-        # The order of subsets affects the decomposition found
+        sortedSubsetList = sorted(rel.subsets())
         if randomize:
             shuffle(sortedSubsetList)
-
         for subset in sortedSubsetList:
             if len(subset) > 0:
-                cl = self.closure(subset, no_trivial=True, limit_to=rel) & rel
-                if len(cl) > 0:
-                    decomp_list += self.find_bcnf_decomp(subset, randomize=randomize)
-                    decomp_list += self.find_bcnf_decomp(cl - subset, randomize=randomize)
+                cl = self.closure(subset) & rel
+                if subset in cl and subset != cl and cl in rel and cl != rel:
+                    r1 = cl
+                    r2 = subset | (rel - cl)
+                    decomp_list += self.find_bcnf_decomp(r1, randomize=randomize)
+                    decomp_list += self.find_bcnf_decomp(r2, randomize=randomize)
                     break
         if len(decomp_list) == 0:
             return [rel]
