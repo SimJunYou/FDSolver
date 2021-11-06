@@ -245,7 +245,7 @@ class Solver:
             return [rel]
         return decomp_list
 
-    def is_lossless_decomp(self, rel1, rel2, originalRel = None):
+    def is_lossless_decomp(self, rel1, rel2, originalRel=None):
         '''
         Checks if two relations that resulted from a BCNF decomposition can be
         losslessly joined.
@@ -261,5 +261,68 @@ class Solver:
         closure = self.closure(intersect, limit_to=originalRel)
         return rel1 in closure or rel2 in closure
 
+    def is_3nf(self, rel):
+        '''
+        Checks whether a relation is in BCNF. 
+        Does so by checking whether any subset fulfils the following condition:
+        >> subset is strict subset of subset's closure
+        >> AND subset's closure is strict subset of original relation
+        >> AND subset's closure - subset does not include any prime attributes
+        If so, then the relation is NOT in BCNF.
+
+        :param rel: The relation to check.
+        :returns: A boolean.
+        '''
+        
+        if rel == None:
+            rel = self.completeRel.copy()
+        for subset in rel.subsets():
+            if len(subset) > 0:
+                cl = self.closure(subset) & rel
+                if subset in cl and subset != cl and cl in rel and cl != rel:
+                    return (cl - subset) in self.prime_attrs()
+        return True
+
+    def find_minimal_basis(self):
+        # Step 1: Non-trivialize and decompose
+        fullyDecomposed = []
+        for eachFd in self.fdSet:  
+            eachFd.unaugment()
+            decomposed = eachFd.decompose()
+            for eachDecomp in decomposed:
+                fullyDecomposed.append(eachDecomp)
+       
+        # Step 2: Remove redundant attributes on LHS of each FD
+        newFdSet = []
+        for eachFd in fullyDecomposed:
+            newBefore = Relation('')
+            for eachRel in eachFd.before:
+                if eachFd.after not in self.closure(eachFd.before - eachRel):
+                    newBefore |= eachRel
+            eachFd.before = newBefore
+            if eachFd not in newFdSet:
+                newFdSet.append(eachFd)
+
+        # Step 3: Remove redundant FDs
+        changesRemain = True
+        while changesRemain:
+            changesRemain = False
+            index = 0
+            while index < len(newFdSet):
+                eachFd = newFdSet[index]
+                # Make a solver that excludes only the current FD
+                # If the solver can infer the current FD, then it is redundant
+                fdSetWithoutFd = [fd for fd in newFdSet if fd != eachFd]
+                temp_solver = Solver(FDSet(*fdSetWithoutFd))
+                if not temp_solver.implies(eachFd.before, eachFd.after):
+                    index += 1
+                else:
+                    changesRemain = True
+                    newFdSet.pop(index)
+
+        return FDSet(*newFdSet)
+
+
+        
 
 
