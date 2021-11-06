@@ -2,7 +2,7 @@ import pytest
 from fdsolver.classes import Relation, FD, FDSet
 from fdsolver.solver import Solver
 from fdsolver.io import FDReader
-from tests.fixtures import make_solver_1, make_solver_2, make_solver_3
+from tests.fixtures import make_solver_1, make_solver_2, make_solver_3, make_solver_4
 
 def test_solver_closure(make_solver_1, make_solver_2):
     solver_1 = make_solver_1
@@ -86,4 +86,32 @@ def test_solver_is_lossless_decomp(make_solver_3):
     rel_abcde = Relation('ABCDE')
     assert not solver_3.is_lossless_decomp(Relation('ACE'), Relation('BD'))
     assert solver_3.is_lossless_decomp(Relation('ACED'), Relation('ACEB'))
+
+def test_solver_is_3nf(make_solver_4):
+    solver_4 = make_solver_4
+    rel_abcde = Relation('ABCDE')
+    rel_acde = Relation('ACDE')
+    rel_bde = Relation('BDE')
+    rel_cde = Relation('CDE')
+    rel_bcd = Relation('BCD')
+    assert solver_4.is_bcnf(rel_abcde) == False
+    assert solver_4.is_bcnf(rel_acde) == False
+    assert solver_4.is_bcnf(rel_bde) == True
+    assert solver_4.is_bcnf(rel_cde) == True
+    assert solver_4.is_bcnf(rel_bcd) == True
+
+def test_solver_find_minimal_basis(make_solver_4):
+    solver_4 = make_solver_4
+    fd_bd_e = FD(Relation('BD'), Relation('E'))
+    fd_ce_b = FD(Relation('CE'), Relation('B'))
+    fd_ce_d = FD(Relation('CE'), Relation('D'))
+    fd_cd_e = FD(Relation('CD'), Relation('E'))
+
+    minbasis = solver_4.find_minimal_basis()
+    assert fd_bd_e in minbasis
+    assert fd_ce_b in minbasis 
+    assert fd_ce_d in minbasis 
+    assert fd_cd_e in minbasis
+    assert len(minbasis) == 4
+
 

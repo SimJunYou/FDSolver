@@ -36,16 +36,15 @@ class Solver:
     def __repr__(self):
         return self.fdSet
 
-    def implies(self, start, end):
+    def implies(self, fd):
         '''
-        Returns whether `start` implies `end`, via the FD set given to the solver.
+        Returns whether a FD is valid via the FD set given to the solver.
 
-        :param start: The source relation.
-        :param end: The target relation.
+        :param fd: The FD to be checked.
         :returns: A boolean.
         '''
         
-        return end in self.closure(start)
+        return fd.after in self.closure(fd.before)
 
     def closure(self, rel=None, limit_to=None):
         '''
@@ -191,7 +190,7 @@ class Solver:
                     decomp_queue.append(r)
                 else:
                     final_decomp.append(r)
-            if allBCNF:
+            if allBCNF and len(decomp_queue) == 0:
                 print("All done! Your final decomposition:", ', '.join(map(str, final_decomp)))
                 return
 
@@ -244,6 +243,20 @@ class Solver:
         if len(decomp_list) == 0:
             return [rel]
         return decomp_list
+
+    def is_dependency_preserving(self, fdSet):
+        '''
+        Checks if a set of FDs is dependency preserving for the current solver's FD set.
+
+        :param fdSet: The set of FDs to be checked.
+        :returns: Whether it is dependency preserving
+        '''
+        
+        tempSolver = Solver(fdSet)
+        for eachFd in self.fdSet:
+            if not tempSolver.implies(eachFd):
+                return False
+        return True
 
     def is_lossless_decomp(self, rel1, rel2, originalRel=None):
         '''
@@ -314,7 +327,7 @@ class Solver:
                 # If the solver can infer the current FD, then it is redundant
                 fdSetWithoutFd = [fd for fd in newFdSet if fd != eachFd]
                 temp_solver = Solver(FDSet(*fdSetWithoutFd))
-                if not temp_solver.implies(eachFd.before, eachFd.after):
+                if not temp_solver.implies(eachFd):
                     index += 1
                 else:
                     changesRemain = True

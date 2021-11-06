@@ -34,6 +34,18 @@ def make_solver_3():
     return solver_3
 
 @pytest.fixture
+def make_solver_4():
+    fd_abd_e = FD(Relation('ABD'), Relation('E'))
+    fd_acd_ad = FD(Relation('ACE'), Relation('AD'))
+    fd_bd_e = FD(Relation('BD'), Relation('E'))
+    fd_cd_be = FD(Relation('CD'), Relation('BE'))
+    fd_ce_bd = FD(Relation('CE'), Relation('BD'))
+    
+    fdset_4 = FDSet(fd_abd_e, fd_acd_ad, fd_bd_e, fd_cd_be, fd_ce_bd)
+    solver_4 = Solver(fdset_4)
+    return solver_4
+
+@pytest.fixture
 def fdsets():
     rel_abc = Relation('ABC')
     rel_cde = Relation('CDE')
