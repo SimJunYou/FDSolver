@@ -1,11 +1,11 @@
-from fdsolver.classes import Relation, FD, FDSet
+from fdsolver.classes import FD, FDSet
+from itertools import chain, combinations
 from random import shuffle 
-from typing import List
 
 # Solves based on the set of FDs given to it on initialisation
 class Solver:
     '''
-    Contains all solving functions to be used on a FD set.
+    Contains all solving functions. They may or may not be dependent on the FD Set.
 
     Constructors:
     __init__()
@@ -23,18 +23,38 @@ class Solver:
         '''
         
         self.fdSet = fdSet
-        self.completeRel = Relation('')
+        self.completeRel = set()
         for eachFd in fdSet:
-            for eachRel in eachFd.before:
-                self.completeRel |= eachRel
-            for eachRel in eachFd.after:
-                self.completeRel |= eachRel
+            for eachRel in eachFd.lhs:
+                self.completeRel |= set(eachRel)
+            for eachRel in eachFd.rhs:
+                self.completeRel |= set(eachRel)
 
     def __str__(self):
         return str(self.fdSet)
     
     def __repr__(self):
         return self.fdSet
+
+    def subsets(self, rel):
+        '''
+        Returns all the subsets of the given set in a list.
+        
+        :param rel: The set to find the subsets of.
+        :returns: A list of sets.
+        '''
+        lst = [set(item) for item in rel]
+        allSubsets = list(chain.from_iterable( \
+                            combinations(lst, r) for r in range(len(lst)+1)))
+        unionedSubsets = []
+        for eachSubset in allSubsets:
+            if len(eachSubset) == 0:
+                continue
+            currRel = set(eachSubset[0])  # Make a copy
+            for eachRel in eachSubset[1:]:
+                currRel |= set(eachRel)
+            unionedSubsets.append(currRel)
+        return unionedSubsets
 
     def implies(self, fd):
         '''
@@ -44,7 +64,7 @@ class Solver:
         :returns: A boolean.
         '''
         
-        return fd.after in self.closure(fd.before)
+        return fd.rhs.issubset(self.closure(fd.lhs))
 
     def closure(self, rel=None, limit_to=None):
         '''
@@ -58,17 +78,17 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
+            rel = set(self.completeRel)  # Make a copy
         if len(rel) == 0:
             return rel
-        closure = rel.copy()
+        closure = set(rel)  # Make a copy again... just to be safe
         stillValid = True
         while stillValid:
             stillValid = False
             for fd in self.fdSet:
-                if fd.before in closure and not fd.after in closure:
+                if fd.lhs.issubset(closure) and not fd.rhs.issubset(closure):
                     stillValid = True
-                    closure |= fd.after
+                    closure |= fd.rhs
         return closure 
 
     def superkeys(self, rel=None):
@@ -80,10 +100,10 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
+            rel = set(self.completeRel)
         superkeys = []
-        for eachSubset in rel.subsets():
-            if len(eachSubset) > 0 and rel in self.closure(eachSubset):
+        for eachSubset in self.subsets(rel):
+            if len(eachSubset) > 0 and rel.issubset(self.closure(eachSubset)):
                 superkeys.append(eachSubset)
         return superkeys
 
@@ -96,13 +116,13 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
+            rel = set(self.completeRel)
         superkeys = self.superkeys(rel)
         keys = []
         for i in range(len(superkeys)):
             sub = False
             for j in range(len(superkeys)):
-                if (i != j and superkeys[j] in superkeys[i] \
+                if (i != j and superkeys[j].issubset(superkeys[i]) \
                            and superkeys[i] != superkeys[j]):
                     sub = True
                     break
@@ -119,12 +139,12 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
+            rel = set(self.completeRel)
         keys = self.keys(rel)
         if len(keys) == 0:
             return None
 
-        prime_attrs = keys[0].copy()
+        prime_attrs = set(keys[0])
         if len(keys) == 1:
             return prime_attrs
         
@@ -145,11 +165,11 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
-        for subset in rel.subsets():
+            rel = set(self.completeRel)
+        for subset in self.subsets(rel):
             if len(subset) > 0:
                 cl = self.closure(subset) & rel
-                if subset in cl and subset != cl and cl in rel and cl != rel:
+                if subset.issubset(cl) and subset != cl and cl.issubset(rel) and cl != rel:
                     return False
         return True
 
@@ -165,7 +185,7 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
+            rel = set(self.completeRel)
         decomp_queue = [rel]
         final_decomp = []
         while True:
@@ -205,11 +225,11 @@ class Solver:
         '''
         
         decomp_list = []
-        sortedSubsetList = sorted(rel.subsets())
+        sortedSubsetList = sorted(self.subsets(rel))
         for subset in sortedSubsetList:
             if len(subset) > 0:
                 cl = self.closure(subset) & rel
-                if subset in cl and subset != cl and cl in rel and cl != rel:
+                if subset.issubset(cl) and subset != cl and cl.issubset(rel) and cl != rel:
                     r1 = cl
                     r2 = subset | (rel - cl)
                     decomp_list.append([r1, self.is_bcnf(r1), \
@@ -228,13 +248,13 @@ class Solver:
         '''
 
         decomp_list = []
-        sortedSubsetList = sorted(rel.subsets())
+        sortedSubsetList = sorted(self.subsets(rel))
         if randomize:
             shuffle(sortedSubsetList)
         for subset in sortedSubsetList:
             if len(subset) > 0:
                 cl = self.closure(subset) & rel
-                if subset in cl and subset != cl and cl in rel and cl != rel:
+                if subset.issubset(cl) and subset != cl and cl.issubset(rel) and cl != rel:
                     r1 = cl
                     r2 = subset | (rel - cl)
                     decomp_list += self.find_bcnf_decomp(r1, randomize=randomize)
@@ -269,10 +289,10 @@ class Solver:
         '''
 
         if originalRel == None:
-            originalRel = self.completeRel.copy()
+            originalRel = set(self.completeRel)
         intersect = rel1 & rel2
         closure = self.closure(intersect, limit_to=originalRel)
-        return rel1 in closure or rel2 in closure
+        return rel1.issubset(closure) or rel2.issubset(closure)
 
     def is_3nf(self, rel):
         '''
@@ -288,11 +308,11 @@ class Solver:
         '''
         
         if rel == None:
-            rel = self.completeRel.copy()
-        for subset in rel.subsets():
+            rel = set(self.completeRel)
+        for subset in self.subsets(rel):
             if len(subset) > 0:
                 cl = self.closure(subset) & rel
-                if subset in cl and subset != cl and cl in rel and cl != rel:
+                if subset.issubset(cl) and subset != cl and cl.issubset(rel) and cl != rel:
                     return (cl - subset) in self.prime_attrs()
         return True
 
@@ -300,7 +320,7 @@ class Solver:
         # Step 1: Non-trivialize and decompose
         fullyDecomposed = []
         for eachFd in self.fdSet:  
-            eachFd.unaugment()
+            eachFd = eachFd.unaugment()
             decomposed = eachFd.decompose()
             for eachDecomp in decomposed:
                 fullyDecomposed.append(eachDecomp)
@@ -308,14 +328,15 @@ class Solver:
         # Step 2: Remove redundant attributes on LHS of each FD
         newFdSet = []
         for eachFd in fullyDecomposed:
-            newBefore = Relation('')
-            for eachRel in eachFd.before:
-                if eachFd.after not in self.closure(eachFd.before - eachRel):
+            newBefore = set()
+            for eachRel in eachFd.lhs:
+                eachRel = set(eachRel)
+                if not eachFd.rhs.issubset(self.closure(eachFd.lhs - eachRel)):
                     newBefore |= eachRel
-            eachFd.before = newBefore
+            eachFd.lhs = newBefore
             if eachFd not in newFdSet:
                 newFdSet.append(eachFd)
-
+                
         # Step 3: Remove redundant FDs
         changesRemain = True
         while changesRemain:
