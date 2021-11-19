@@ -40,12 +40,11 @@ class FD:
         self.rhs |= new
 
     def unaugment(self):
-        # i.e. {A,C} -> {A,D} becomes {C} -> {D}
+        # i.e. {A,C} -> {A,D} becomes {A,C} -> {D}
         intersection = self.lhs & self.rhs
         newLhs, newRhs = set(self.lhs), set(self.rhs)
-        newLhs -= intersection
         newRhs -= intersection
-        return FD(newLhs, newRhs)
+        return FD(self.lhs, newRhs)
 
     def __str__(self):
         return str(self.lhs) + " -> " + str(self.rhs)
@@ -77,6 +76,8 @@ class FDSet:
     Abstract representation of a set of functional dependencies.
     Uses the FD class defined earlier.
     Can iterate and get/set using indexing.
+    Mimicks a set, in that no duplicates exist.
+    Ordered, but there's no point to ordering the FDs anyways.
 
 
     Constructors:
@@ -97,12 +98,15 @@ class FDSet:
     '''
 
     def __init__(self, *args):
-        self.proof = [*args]
+        self.proof = []
+        for eachFd in args:
+            self.add_step(eachFd)
 
     def add_step(self, newFd):
         if not isinstance(newFd, FD):
-            raise NotImplemented 
-        self.proof.append(newFd)
+            raise NotImplemented
+        if newFd not in self.proof:
+            self.proof.append(newFd)
 
     def __str__(self):
         outstr = ""
