@@ -19,7 +19,6 @@ def test_rel_generate_subsets(make_solver_1):
     assert set('ABC') in subsets
     assert len(subsets) == 7
 
-
 def test_solver_closure(make_solver_1, make_solver_2):
     solver_1 = make_solver_1
 
@@ -34,7 +33,6 @@ def test_solver_closure(make_solver_1, make_solver_2):
     assert solver_2.closure(set('A')) == set('AB')
     assert solver_2.closure(set('B')) == set('B')
     assert solver_2.closure(set('AC')) == set('ABCDE')
-
 
 def test_solver_superkeys(make_solver_2):
     solver_2 = make_solver_2
@@ -67,7 +65,6 @@ def test_solver_is_bcnf(make_solver_3):
     assert solver_3.is_bcnf(set('ADE')) == True
     assert solver_3.is_bcnf(set('ACE')) == True
 
-
 @pytest.mark.parametrize('execution_count', range(10))
 def test_solver_bcnf_decomp(make_solver_3, execution_count):
     solver_3 = make_solver_3
@@ -90,16 +87,14 @@ def test_solver_is_3nf(make_solver_4):
 
 def test_solver_find_minimal_basis(make_solver_4):
     solver_4 = make_solver_4
-    fd_bd_e = FD(set('BD'), set('E'))
-    fd_ce_b = FD(set('CE'), set('B'))
-    fd_ce_d = FD(set('CE'), set('D'))
-    fd_cd_e = FD(set('CD'), set('E'))
-
     minbasis = solver_4.find_minimal_basis()
-    assert fd_bd_e in minbasis
-    assert fd_ce_b in minbasis 
-    assert fd_ce_d in minbasis 
-    assert fd_cd_e in minbasis
-    assert len(minbasis) == 4
 
+    redundancy_exists = False
+    for eachFd in minbasis:
+        filtered_minbasis = [each for each in minbasis if each != eachFd]
+        temp_solver = Solver(FDSet(*filtered_minbasis))
+        if temp_solver.implies(eachFd):
+            redundancy_exists = True
+            break
 
+    assert not redundancy_exists

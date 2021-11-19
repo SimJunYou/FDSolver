@@ -336,7 +336,7 @@ class Solver:
             eachFd.lhs = newBefore
             if eachFd not in newFdSet:
                 newFdSet.append(eachFd)
-                
+        
         # Step 3: Remove redundant FDs
         changesRemain = True
         while changesRemain:
