@@ -11,5 +11,10 @@ setup(name='FDSolver',
       author='Sim Jun You',
       author_email='simjunyou99@gmail.com',
       packages=find_packages(),
-      license='MIT license'
-      ) # TODO: Fill in the rest of the stuff if necessary
+      license='MIT license',
+      entry_points={
+            'console_scripts': [
+                  'fdsolver = fdsolver.ui:entry'
+            ]
+      }
+) # TODO: Fill in the rest of the stuff if necessary
