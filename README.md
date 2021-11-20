@@ -7,87 +7,48 @@ I made this since there weren't really any similar libraries in Python. The ulti
 ## Getting Started
 > **Warning:** You're looking at a pre-release version of this library which may contain bugs. Use at your own caution!
 
-The **Relation** class has complete functionality:
+Functional dependencies (**FD**) are implemented together with their sets (**FDSet**). It uses Python's built-in sets to
+represent relations:
 ```python
->>> from fdsolver.classes import Relation
+>>> from fdsolver.classes import FD, FDSet
 
-## Fast creation and naming
-## The relation constructor takes any iterable as the element set, but characters are recommended
->>> rel_abc = Relation('ABC')
->>> rel_abc
-r{A,B,C}
->>> rel_abc.name = 'R1'
->>> rel_abc
-R1{A,B,C}
->>> rel_def = Relation('DEF', name='R2')
->>> rel_def
-R2{D,E,F}
-
-## Intuitive iteration
->>> for each_rel in Relation('DEF'):
-...     print(each_rel)             
-r{F}
-r{E}
-r{D}
-
-## Wide variety of operator implementations
->>> Relation('AB') in Relation('ABCD') # Subset (non-strict)
-True
->>> Relation('DE') in Relation('ABCD')
-False
->>> Relation('AB') | Relation('AC')    # Union
-r{A,B,C}
->>> Relation('AB') & Relation('AC')    # Intersect
-r{A}
->>> Relation('AB') - Relation('AC')    # Difference
-r{B}
-
-## Conveniently find all subsets
->>> print(rel_abc.subsets())
-[r{C}, r{B}, r{A}, r{B,C}, r{A,C}, r{A,B}, r{A,B,C}]
-```
-
-Functional dependencies (**FD**) are implemented together with their sets (**FDSet**), built on top of the Relation class:
-```python
->>> from fdsolver.classes import Relation, FD, FDSet
-
-## Make FDs from Relations
->>> fd_a_bc = FD(Relation('A'), Relation('BC'))
+## Make FDs from sets
+>>> fd_a_bc = FD(set('A'), set('BC'))
 >>> fd_a_bc
-r{A} -> r{B,C}
+{A} -> {B,C}
 
 ## A wide set of built-in functionality
 >>> fd_a_bc.decompose()                   # Returns a FDSet
-r{A} -> r{C}
-r{A} -> r{B}
+{A} -> {C}
+{A} -> {B}
 
 >>> fd_a_b, fd_a_c = fd_a_bc.decompose()  # Union operator
 >>> fd_a_b | fd_a_c
-r{A} -> r{C,B}
+{A} -> {C,B}
 
->>> fd_a_bc.augment(Relation('D'))        # In-place augmentation
+>>> fd_a_bc.augment(set('D'))        # In-place augmentation
 >>> fd_a_bc
-r{A,D} -> r{B,C,D}
+{A,D} -> {B,C,D}
 >>> fd_a_bc.unaugment()
 >>> fd_a_bc
-r{A} -> r{B,C}
+{A} -> {B,C}
 
 ## Make FDSets from FDs
->>> fdset_1 = FDSet(fd_a_b, fd_a_c, FD(Relation('A'), Relation('D')))
+>>> fdset_1 = FDSet(fd_a_b, fd_a_c, FD(set('A'), set('D')))
 >>> fdset_1
-r{A} -> r{D}
-r{A} -> r{C}
-r{A} -> r{B}
->>> fdset_1.add_step(FD(Relation('A'), Relation('E')))
+{A} -> {D}
+{A} -> {C}
+{A} -> {B}
+>>> fdset_1.add_step(FD(set('A'), set('E')))
 >>> fdset_1
-r{A} -> r{E}
-r{A} -> r{D}
-r{A} -> r{C}
-r{A} -> r{B}
+{A} -> {E}
+{A} -> {D}
+{A} -> {C}
+{A} -> {B}
 ```
-**Solvers** are a separate class from the FDSet class despite having practically the same properties. This is to separate the solver logic from the core code of the FDSet class. There is also a reader class (**FDReader**) and a writer class (**FDWriter**) to make IO easier.
+**Solvers** are a separate class from the FDSet class to abstract out the solver logic. There is also a reader class (**FDReader**) and a writer class (**FDWriter**) to make IO easier.
 ```python
->>> from fdsolver.classes import Relation, FD, FDSet
+>>> from fdsolver.classes import FD, FDSet
 >>> from fdsolver.solver import Solver
 >>> from fdsolver.io import FDReader, FDWriter
 
@@ -106,7 +67,7 @@ r{C,D} -> r{B,E}
 r{C,E} -> r{B,D}
 
 ## Find closures, keys, and more
->>> solver.closure(Relation('CE'))
+>>> solver.closure(set('CE'))
 r{B,C,D,E}
 >>> solver.keys()
 [r{A,C,D}, r{A,C,E}]
@@ -116,13 +77,13 @@ r{B,C,D,E}
 r{A,C,D,E}
 
 ## BCNF functionality is included
->>> solver.is_bcnf(Relation('ACE'))
+>>> solver.is_bcnf(set('ACE'))
 True
->>> solver.find_bcnf_decomp(Relation('ABCDE'))
+>>> solver.find_bcnf_decomp(set('ABCDE'))
 [r{B,D,E}, r{B,C,D}, r{A,C,E}]
 
 ## Verify if two relations can be losslessly joined
->>> solver.is_lossless_decomp(Relation('BDE'), Relation('BCD'))
+>>> solver.is_lossless_decomp(set('BDE'), set('BCD'))
 True
 
 ```
@@ -130,7 +91,7 @@ True
 ## Features
 
 Current feature checklist:
-- [x] Relation class with Pythonic operators
+- [x] set class with Pythonic operators
 - [x] Functional dependency (FD) class with Pythonic operators
 - [x] Set of functional dependencies (FDSet) class with Pythonic operators
 - [x] Basic FD functionality like decomposition, augmentation, subsets
@@ -140,8 +101,8 @@ Current feature checklist:
     - [x] Check whether a relation is in BCNF
     - [x] Finding BCNF decompositions
     - [x] Checking whether a decomposition is lossless
-    - [ ] Check whether a relation is in 3NF
-    - [ ] Finding minimal bases
+    - [x] Check whether a relation is in 3NF
+    - [x] Finding minimal bases
     - [ ] Performing 3NF synthesis
 - [ ] Make the code more intuitive to write
 - [ ] User friendly interface (GUI? Web app?)
