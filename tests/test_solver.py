@@ -98,3 +98,11 @@ def test_solver_find_minimal_basis(make_solver_4):
             break
 
     assert not redundancy_exists
+
+'''
+def test_interactive_bcnf_decomp(make_solver_3):
+    solver_3 = make_solver_3
+    rel_abcde = set('ABCDE')
+    solver_3.interactive_find_bcnf_decomp(rel_abcde)
+    assert True
+'''
