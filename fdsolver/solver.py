@@ -178,7 +178,6 @@ class Solver:
         Creates an interactive menu to assist in finding ideal BCNF decompositions.
         Lets users choose which decomposition of the current relation to use.
         Prints the list of chosen decompositions at the end.
-        May be buggy.
 
         :params rel: The relation to be decomposed.
         :returns: None (output is printed).
@@ -196,7 +195,7 @@ class Solver:
             print("All available decompositions:")
             for count, each in enumerate(decomp_list):
                 print(f"{count+1}: {each[0]} - {each[1]}, {each[2]} - {each[3]} ",end='')
-                print(f"(Lossless: {each[4]})")
+                print(f"(Dependency-Preserving: {each[4]})")
             user = input("Choose pair to add to queue (q to stop): ")
             print()
             if user == 'q' or not user.isdigit():
@@ -234,7 +233,7 @@ class Solver:
                     r2 = subset | (rel - cl)
                     decomp_list.append([r1, self.is_bcnf(r1), \
                                         r2, self.is_bcnf(r2), \
-                                        self.is_lossless_decomp(r1,r2)])
+                                        self.is_dependency_preserving(r1,r2)])
         return decomp_list
 
     def find_bcnf_decomp(self, rel, randomize=False):
@@ -264,27 +263,30 @@ class Solver:
             return [rel]
         return decomp_list
 
-    def is_dependency_preserving(self, fdSet):
+    def is_dependency_preserving(self, rel1, rel2):
         '''
-        Checks if a set of FDs is dependency preserving for the current solver's FD set.
+        Checks whether the decomposition of two relations (decomposed from one parent relation)
+        is dependency preserving or not.
 
-        :param fdSet: The set of FDs to be checked.
-        :returns: Whether it is dependency preserving
+        :param rel1: The first relation in the decomposition.
+        :param rel2: The second relation in the decomposition.
+        :returns: A boolean value.
         '''
+
+        solver1 = Solver(self.fdSet.get_sub_fdset(rel1))
+        solver2 = Solver(self.fdSet.get_sub_fdset(rel2))
         
-        tempSolver = Solver(fdSet)
         for eachFd in self.fdSet:
-            if not tempSolver.implies(eachFd):
+            if not (solver1.implies(eachFd) or solver2.implies(eachFd)):
                 return False
         return True
 
     def is_lossless_decomp(self, rel1, rel2, originalRel=None):
         '''
-        Checks if two relations that resulted from a BCNF decomposition can be
-        losslessly joined.
+        Checks if two relations can be losslessly joined under the current solver's FD set.
 
-        :param rel1: The first decomposed relation.
-        :param rel2: The second decomposed relation.
+        :param rel1: The first relation.
+        :param rel2: The second relation.
         :returns: Whether it is a lossless decomposition.
         '''
 
@@ -320,7 +322,7 @@ class Solver:
         # Step 1: Non-trivialize and decompose
         fullyDecomposed = []
         for eachFd in self.fdSet:  
-            eachFd = eachFd.unaugment()
+            eachFd = eachFd.untrivialize()
             decomposed = eachFd.decompose()
             for eachDecomp in decomposed:
                 fullyDecomposed.append(eachDecomp)
