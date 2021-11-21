@@ -112,8 +112,11 @@ class FDSet:
 
     def __init__(self, *args):
         self.proof = []
-        for eachFd in args:
-            self.add_step(eachFd)
+        for eachItem in args:
+            if isinstance(eachItem, FD):
+                self.add_step(eachItem)
+            elif isinstance(eachItem, Iterable):
+                self.proof += FDSet(*eachItem).proof
 
     def add_step(self, newFd):
         if not isinstance(newFd, FD):
