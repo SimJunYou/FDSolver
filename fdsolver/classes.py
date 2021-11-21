@@ -16,15 +16,25 @@ class FD:
 
     Methods:
     decompose()
-    augment(new), unaugment()
+    augment(new), untrivialize()
 
     Properties:
     lhs, rhs (i.e. lhs -> rhs)
+    sortedLhs, sortedRhs (for pretty printing)
     '''
 
-    def __init__(self, lhs, rhs, fileInput=None):
+    def __init__(self, lhs=None, rhs=None, fileInput=None):
+        if isinstance(lhs, str) and not rhs:
+            # > is the only delimiter
+            # elements will be uppercase characters
+            toConvert = lhs  # just for clarity
+            lhs, rhs = toConvert.split('>')
+            lhs, rhs = set(lhs.upper()), set(rhs.upper())
+
         self.lhs = lhs
         self.rhs = rhs
+        self.sortedLhs = sorted(list(lhs))
+        self.sortedRhs = sorted(list(rhs))
 
     def decompose(self):
         newFDSet = FDSet()
@@ -36,18 +46,20 @@ class FD:
     def augment(self, new):
         if not isinstance(new, Relation):
             raise NotImplemented
-        self.lhs |= new
-        self.rhs |= new
+        return FD(self.lhs | new, self.rhs | new)
 
-    def unaugment(self):
+    def untrivialize(self):
         # i.e. {A,C} -> {A,D} becomes {A,C} -> {D}
         intersection = self.lhs & self.rhs
         newLhs, newRhs = set(self.lhs), set(self.rhs)
         newRhs -= intersection
         return FD(self.lhs, newRhs)
 
+    def is_contained_in(self, rel):
+        return self.lhs.issubset(rel) and self.rhs.issubset(rel)
+
     def __str__(self):
-        return str(self.lhs) + " -> " + str(self.rhs)
+        return ",".join(self.sortedLhs) + " -> " + ",".join(self.sortedRhs)
 
     def __repr__(self):
         return self.__str__()
@@ -69,6 +81,7 @@ class FD:
             raise NotImplemented
         if self.lhs == other.lhs:
             self.rhs |= other.rhs
+            self.sortedRhs = sorted(list(self.rhs))
 
 
 class FDSet:
@@ -107,6 +120,20 @@ class FDSet:
             raise NotImplemented
         if newFd not in self.proof:
             self.proof.append(newFd)
+
+    def get_sub_fdset(self, rel):
+        '''
+        Returns a FD set with only FDs that are completely contained
+        within the given relation.
+
+        :param rel: The given relation.
+        :returns: The new FD set.
+        '''
+        newFdSet = FDSet()
+        for eachFd in self:
+            if eachFd.is_contained_in(rel):
+                newFdSet.add_step(eachFd)
+        return newFdSet
 
     def __str__(self):
         outstr = ""
