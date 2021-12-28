@@ -44,9 +44,13 @@ class FD:
         return newFDSet
     
     def augment(self, new):
-        if not isinstance(new, Relation):
+        if isinstance(new, set):
+            return FD(self.lhs | new, self.rhs | new)
+        elif isinstance(new, str):
+            new_set = set(upper(new))
+            return FD(self.lhs | new_set, self.rhs | new_set)
+        else:
             raise NotImplemented
-        return FD(self.lhs | new, self.rhs | new)
 
     def untrivialize(self):
         # i.e. {A,C} -> {A,D} becomes {A,C} -> {D}
