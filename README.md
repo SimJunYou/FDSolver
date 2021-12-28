@@ -12,39 +12,45 @@ represent relations:
 ```python
 >>> from fdsolver.classes import FD, FDSet
 
-## Make FDs from sets
+## Make FDs from sets (and strings!)
 >>> fd_a_bc = FD(set('A'), set('BC'))
 >>> fd_a_bc
-{A} -> {B,C}
+A -> B,C
+>>> fd_x_yz = FD('X>yZ')                  # Use > as the delimiter
+X -> Y,Z                                  # Each char will be taken as an element
 
 ## A wide set of built-in functionality
->>> fd_a_bc.decompose()                   # Returns a FDSet
-{A} -> {C}
-{A} -> {B}
+>>> fd_a_bc.decompose()                   # Returns a FDSet (see below)
+A -> C
+A -> B
 
 >>> fd_a_b, fd_a_c = fd_a_bc.decompose()  # Union operator
 >>> fd_a_b | fd_a_c
-{A} -> {C,B}
+A -> C,B
 
->>> fd_a_bc.augment(set('D'))        # In-place augmentation
->>> fd_a_bc
-{A,D} -> {B,C,D}
->>> fd_a_bc.unaugment()
->>> fd_a_bc
-{A} -> {B,C}
+>>> fd_a_bc.augment(set('D'))             # Augmentation returns a new FD
+A,D -> B,C,D
+>>> fd_a_bc.augment('EF')                 # Accepts characters
+A,D,E,F -> B,C,D,E,F
+
+>>> FD('AB>AC').untrivialize()            # Removes trivial elements from RHS
+A,B -> C
+
+>>> FD('A>B').is_contained_in(fd_a_bc)    # Is one FD a subset of another?
+True
 
 ## Make FDSets from FDs
->>> fdset_1 = FDSet(fd_a_b, fd_a_c, FD(set('A'), set('D')))
+>>> fdset_1 = FDSet(FD('A>B'), FD('A>C'), FD('A>D'))
 >>> fdset_1
-{A} -> {D}
-{A} -> {C}
-{A} -> {B}
->>> fdset_1.add_step(FD(set('A'), set('E')))
+A -> B
+A -> C
+A -> D
+>>> fdset_1.add_step(FD('A>E'))
 >>> fdset_1
-{A} -> {E}
-{A} -> {D}
-{A} -> {C}
-{A} -> {B}
+A -> B
+A -> C
+A -> D
+A -> E
 ```
 **Solvers** are a separate class from the FDSet class to abstract out the solver logic. There is also a reader class (**FDReader**) and a writer class (**FDWriter**) to make IO easier.
 ```python
@@ -53,18 +59,14 @@ represent relations:
 >>> from fdsolver.io import FDReader, FDWriter
 
 ## Create solvers from FDSets
->>> fdset_1 = ...
->>> solver1 = Solver(fdset_1)
-
-## ... or directly create objects from file inputs
->>> reader = FDReader('input.txt')
->>> solver = reader.get_solver()
+>>> fdset = ...
+>>> solver = Solver(fdset)
 >>> solver
-r{A,B,D} -> r{E}
-r{A,C,E} -> r{A,D}
-r{B,D} -> r{E}
-r{C,D} -> r{B,E}
-r{C,E} -> r{B,D}
+A,B,D -> E
+A,C,E -> A,D
+B,D -> E
+C,D -> B,E
+C,E -> B,D
 
 ## Find closures, keys, and more
 >>> solver.closure(set('CE'))
