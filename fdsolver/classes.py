@@ -23,7 +23,12 @@ class FD:
     sortedLhs, sortedRhs (for pretty printing)
     '''
 
-    def __init__(self, lhs=None, rhs=None, fileInput=None):
+    def __init__(self, lhs=None, rhs=None):
+        # can be used like so:
+        # FD('A>BC') or
+        # FD(set('A'), set('BC'))
+        # both will give identical FDs
+
         if isinstance(lhs, str) and not rhs:
             # > is the only delimiter
             # elements will be uppercase characters
