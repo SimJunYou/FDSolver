@@ -331,13 +331,20 @@ class Solver:
         newFdSet = []
         for eachFd in fullyDecomposed:
             newBefore = set()
+            if len(eachFd.lhs) == 1:
+                newFdSet.append(eachFd)
+                continue  # append and skip if LHS cannot be simplified
             for eachRel in eachFd.lhs:
                 eachRel = set(eachRel)
-                if not eachFd.rhs.issubset(self.closure(eachFd.lhs - eachRel)):
+                lhsWithoutRel = eachFd.lhs - eachRel
+                closureWithoutRel = self.closure(lhsWithoutRel)
+                if not eachFd.rhs.issubset(closureWithoutRel):
                     newBefore |= eachRel
-            eachFd.lhs = newBefore
-            if eachFd not in newFdSet:
-                newFdSet.append(eachFd)
+            if len(newBefore) == 0:
+                continue  # skip if completely redundant
+            newFd = FD(lhs=newBefore, rhs=eachFd.rhs)
+            if newFd not in newFdSet:
+                newFdSet.append(newFd)
         
         # Step 3: Remove redundant FDs
         changesRemain = True
